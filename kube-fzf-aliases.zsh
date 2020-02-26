@@ -1,0 +1,2 @@
+alias kgp="kubectl get pods | fzf -m --preview 'kubectl describe pod {1}' | awk '{print \$1}' | xargs -o kubectl edit pods"
+alias kgd="kubectl get deployments | fzf -m --preview 'kubectl describe deployments {1}' | awk '{print \$1}' | xargs -o kubectl edit deployments"
