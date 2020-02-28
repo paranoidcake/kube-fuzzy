@@ -29,7 +29,7 @@ function kgp () {
                 eventsLine=\$(cat /tmp/kgpPrev | grep -n 'Events:' | cut -d: -f 1);
                 bat /tmp/kgpPrev --line-range \$eventsLine:\$lines
                 echo -------------------------------------------------------
-                less /tmp/kgpPrev
+                less -e /tmp/kgpPrev
         };" | awk '{ print $1 }')
         
         if [ ! -z "$result" ]; then
@@ -66,7 +66,7 @@ function kgd () {
                 eventsLine=\$(cat /tmp/kgdPrev | grep -n 'Events:' | cut -d: -f 1);
                 bat /tmp/kgdPrev --line-range \$eventsLine:\$lines
                 echo -------------------------------------------------------
-                less /tmp/kgdPrev
+                less -e /tmp/kgdPrev
         };" | awk '{ print $1 }')
 
         if [ ! -z "$result" ]; then
