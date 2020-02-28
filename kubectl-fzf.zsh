@@ -12,7 +12,16 @@ function kgp () {
         eventsLine=0
         lines=0
 
-        kubectl edit pods $(kubectl get pods |
+        # TODO: Use to highlight the Events: section of text
+        # highlighting=""
+        # 
+        # count=\$eventsLine
+        # for line in {\$eventsLine..\$((\$lines+1))}; do
+        #         highlighting+=\"-H \$count\ "
+        #         count=\$((\$count+1))
+        # done
+
+        result=$(kubectl get pods |
         fzf -m --preview "{
                 kubectl describe pod {1} > /tmp/kgpPrev;
                 lines=\$(echo \$(wc -l < /tmp/kgpPrev));
@@ -22,6 +31,11 @@ function kgp () {
                 echo -------------------------------------------------------
                 less /tmp/kgpPrev
         };" | awk '{ print $1 }')
+        
+        if [ ! -z "$result" ]; then
+                kubectl edit pods $result
+        fi
+
         rm /tmp/kgpPrev
 }
 
@@ -35,7 +49,16 @@ function kgd () {
         eventsLine=0
         lines=0
 
-        kubectl edit deployments $(kubectl get deployments |
+        # TODO: Use to highlight the Events: section of text
+        # highlighting=""
+        # 
+        # count=\$eventsLine
+        # for line in {\$eventsLine..\$((\$lines+1))}; do
+        #         highlighting+=\"-H \$count\ "
+        #         count=\$((\$count+1))
+        # done
+
+        result=$(kubectl get deployments |
         fzf -m --preview "{
                 kubectl describe deployments {1} > /tmp/kgdPrev;
                 lines=\$(echo \$(wc -l < /tmp/kgdPrev));
@@ -45,5 +68,10 @@ function kgd () {
                 echo -------------------------------------------------------
                 less /tmp/kgdPrev
         };" | awk '{ print $1 }')
+
+        if [ ! -z "$result" ]; then
+                kubectl edit deployments $result
+        fi
+
         rm /tmp/kgdPrev
 }
