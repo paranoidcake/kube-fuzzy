@@ -39,10 +39,13 @@ function kube_fuzzy () {
     # Cleanup temporary files
     exitCode=$(echo $?)
     rm $tempFile
+    unset tempFile
     run=$(cat $commandFile)
     result=$(cat $resultFile) # $(echo $(cat $resultFile | cut -d' ' -f1 | awk '$1=$1' ORS=' ' | cat)) # tr '\r\n' ' ')) # awk '$1=$1' ORS=' ' | cat)
     rm $commandFile
     rm $resultFile
+    unset commandFile
+    unset resultFile
 
     # Handle commands after skim exits
     if [[ $exitCode -eq 130 ]]; then # Skim was aborted
