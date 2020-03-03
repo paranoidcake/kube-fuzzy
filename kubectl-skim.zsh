@@ -47,24 +47,19 @@ function kube_fuzzy () {
         if [[ ! -z "$run" ]]; then
             if [[ "$run" == "edit" ]]; then
                 kubectl edit $1 $result
-                exit 0
             elif [[ "$run" == "describe" ]]; then
                 kubectl describe $1 $result
-                exit 0
             fi
   
             if [[ $1 == "pods" ]]; then
                 if [[ "$run" == "logs" ]]; then
                     kubectl logs $result
-                    exit 0
                 fi
             else
                 echo "Can't get logs for type $1"
-                exit 2
             fi
         else
             echo "Aborted"
-            exit 1
         fi
     fi
 }
