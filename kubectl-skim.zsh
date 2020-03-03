@@ -6,6 +6,9 @@
 #       bat (https://github.com/sharkdp/bat)
 #       bash >= v4, zsh, or any other shell with associative array support
 #
+# Usage:
+#       Source the file in your shell, or add to your rc file
+#
 
 function kube_fuzzy () {
         # Temporary files for reading / writing data from skim
