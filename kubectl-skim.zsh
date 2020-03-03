@@ -31,7 +31,7 @@ function kube_fuzzy () {
 				lines=\$(echo \$(wc -l < $tempFile)) &&
 				eventsLine=\$(echo \$(wc -l < $tempFile) | grep -n 'Events:' | cut -d: -f 1) &&
 				bat $tempFile --line-range \$eventsLine:\$lines; 
-				less -e $tempFile;
+			less -e $tempFile;
 			}" --bind "${commands[delete]}:execute(kubectl delete $1 {}),${commands[edit]}:execute(echo 'edit' > $commandFile; echo {} > $resultFile)+abort,${commands[describe]}:execute(echo 'describe' > $commandFile; echo {} > $resultFile)+abort,${commands[logs]}:execute(echo 'logs' > $commandFile; echo {} > $resultFile)+abort"
 
 	# Cleanup temporary files
