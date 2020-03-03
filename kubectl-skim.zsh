@@ -75,4 +75,4 @@ function kube_fuzzy () {
 
 alias kgp="kube_fuzzy pods"
 alias kgd="kube_fuzzy deployments"
-unset kube_fuzzy
+unset -f kube_fuzzy
