@@ -62,8 +62,8 @@ function kube_fuzzy () {
         fi
 }
 
-unalias kgp
-unalias kgd
+unalias kgp > /dev/null 2>&1
+unalias kgd > /dev/null 2>&1
 alias kgp="kube_fuzzy pods"
 alias kgd="kube_fuzzy deployments"
 unset kube_fuzzy
