@@ -16,7 +16,7 @@ function kubeFuzzy () {
         declare -A commands
         commands+=(
                 ["edit"]="ctrl-e"
-                ["delete"]="ctrl-."
+                ["delete"]="ctrl-t"
                 ["describe"]="ctrl-b"
                 ["logs"]="ctrl-l"
         )
