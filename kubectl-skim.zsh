@@ -6,11 +6,11 @@
 #       bat (https://github.com/sharkdp/bat)
 #
 
-function kubeFuzzy () {
+function kube_fuzzy () {
         # Temporary files for reading / writing data from skim
-        tempFile=$(mktemp /tmp/kgp.XXXXXXXXXXXX)
-        commandFile=$(mktemp /tmp/kgp.command.XXXXXXXXXXXX)
-        resultFile=$(mktemp /tmp/kgp.result.XXXXXXXXXXXX)
+        tempFile=$(mktemp /tmp/kf.XXXXXXXXXXXX)
+        commandFile=$(mktemp /tmp/kf.command.XXXXXXXXXXXX)
+        resultFile=$(mktemp /tmp/kf.result.XXXXXXXXXXXX)
 
         # Key bindings
         declare -A commands
@@ -60,5 +60,6 @@ function kubeFuzzy () {
 
 unalias kgp
 unalias kgd
-alias kgp="kubeFuzzy pods"
-alias kgd="kubeFuzzy deployments"
+alias kgp="kube_fuzzy pods"
+alias kgd="kube_fuzzy deployments"
+unset kube_fuzzy
