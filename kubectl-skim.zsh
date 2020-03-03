@@ -1,5 +1,5 @@
 #
-# Functions to utilise skim and bat to edit kubernetes pods and deployments
+# Function and aliases to utilise skim and bat to edit kubernetes pods and deployments
 #
 # Requirements:
 #       sk  (https://github.com/lotabout/skim)
