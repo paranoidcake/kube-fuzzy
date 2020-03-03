@@ -67,7 +67,6 @@ function kube_fuzzy () {
             exit 1
         fi
     fi
-    exit 0
 }
 
 
