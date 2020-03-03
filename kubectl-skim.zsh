@@ -4,6 +4,7 @@
 # Requirements:
 #       sk  (https://github.com/lotabout/skim)
 #       bat (https://github.com/sharkdp/bat)
+#       zsh or bash >= v4
 #
 
 function kube_fuzzy () {
