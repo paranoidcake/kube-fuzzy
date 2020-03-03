@@ -8,9 +8,9 @@
 
 function kube_fuzzy () {
         # Temporary files for reading / writing data from skim
-        tempFile=$(mktemp /tmp/kf.XXXXXXXXXXXX)
-        commandFile=$(mktemp /tmp/kf.command.XXXXXXXXXXXX)
-        resultFile=$(mktemp /tmp/kf.result.XXXXXXXXXXXX)
+        tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
+        commandFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
+        resultFile=$(mktemp /tmp/kube_fuzzy.result.XXXXXXXXXXXX)
 
         # Key bindings
         declare -A commands
