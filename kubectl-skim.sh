@@ -14,7 +14,6 @@ function kube_fuzzy () {
     # Temporary files for reading / writing data from skim
     local tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
     local commandFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
-    local descriptionFile=$(mktemp /tmp/kube_fuzzy.description.XXXXXXXXXXXX)
     echo "none" > $commandFile
 
     # Key bindings
@@ -43,7 +42,6 @@ function kube_fuzzy () {
     # Cleanup temporary files
     local exitCode=$(echo $?)
     rm $tempFile
-    rm $descriptionFile
     local run=$(cat $commandFile)
     rm $commandFile
     
