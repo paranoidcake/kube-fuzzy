@@ -71,27 +71,33 @@ function kube_fuzzy () {
 
     if [[ -z $result ]]; then           # No selection made
         echo "Aborted"
-    elif [[ "$run" != "none" ]]; then   # Execute last written command
-        local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ')
+    elif [[ "$run" != "none" ]]; then   # Execute action
+        local result=$(echo $(echo $result | awk '{ print $1 }' | tr '\n' ' '))
         if [[ "$run" == "edit" ]]; then
             kubectl edit $1 $result
         elif [[ "$run" == "describe" ]]; then
             kubectl describe $1 $result
         fi
   
-        if [[ $1 == "pods" ]]; then
+        if [[ $1 == "pods" ]]; then     # Run pod specific actions
             if [[ "$run" == "logs" ]]; then
                 kubectl logs $result
+            elif [[ "$run" == "containers" ]]; then
+                echo "Fetching containers..."
+                contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
+                initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
+                echo -e "$contNames\n$initContNames" | sk --ansi --preview "kubectl logs $result -c {}"
             fi
         else
             if [[ "$run" == "logs" ]]; then
                 echo "Can't get logs for type $1"
+            elif [[ "$run" == "containers" ]]; then
+                echo "Can't get containers for type $1"
             fi
         fi
-    else    # Selection made
+    else
         echo -e "$result"
     fi
-
 }
 
 
