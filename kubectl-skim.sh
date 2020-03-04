@@ -88,7 +88,7 @@ function kube_fuzzy () {
             fi
         fi
     else    # Selection made
-        echo $result
+        echo -e "$result"
     fi
 
 }
