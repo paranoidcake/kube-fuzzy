@@ -14,13 +14,14 @@
 #           - ctrl-t: Delete currently highlighted object*
 #           - ctrl-b: Describe selected objects after exit
 #           - ctrl-l: Log selected pods after exit
+#           - ctrl-k: Get containers of selected pod, and display their logs in sk
 #           - ctrl-n: No action, defaults to outputting selected objects
 #       These keybinds and their behaviour can be changed, see #Configuring#Defining keybinds
 #
 # Configuring:
 #       Defining keybinds:
 #           - Keybinds are defined in the commands array, in the form ['action']='key(s)'
-#           - Actions are defined in the --bind parameter of sk (must be on one line)
+#           - Actions are defined in the actions variable, which cannot have leading whitespace and are seperated by newlines
 #       Selection + actions:
 #           - The default behaviour of most actions is to write that action's name to be executed*, using execute(echo 'action' > $commandFile)
 #           - Accepting the selection of a kubernetes object (or multiple with Tab) will execute the last written action
@@ -31,7 +32,7 @@
 #           - The preview window will execute `$SHELL -c` on the string passed to the --preview flag each time a line is highlighted
 #
 #       *By default the 'delete' action does not act on the current selection, or wait for the selection to be accepted to execute.
-#           The currently highlighted line is subsituted instead, see `man sk` and the execute() paired with 'delete' in --bind for details
+#           The currently highlighted line is subsituted instead, see `man sk` and the execute() paired with 'delete' in actions for details
 #
 
 function kube_fuzzy () {
