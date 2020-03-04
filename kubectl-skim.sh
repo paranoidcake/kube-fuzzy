@@ -54,7 +54,7 @@ function kube_fuzzy () {
 
     actions=$(
 echo -e "${commands[none]}:execute(echo 'none' > $commandFile)
-${commands[delete]}:execute(kubectl delete $1 {})
+${commands[delete]}:execute(kubectl delete $1 {1})
 ${commands[edit]}:execute(echo 'edit' > $commandFile)
 ${commands[describe]}:execute(echo 'describe' > $commandFile)
 ${commands[logs]}:execute(echo 'logs' > $commandFile)
