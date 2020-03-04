@@ -12,9 +12,10 @@
 
 function kube_fuzzy () {
     # Temporary files for reading / writing data from skim
-    tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
-    commandFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
-    resultFile=$(mktemp /tmp/kube_fuzzy.result.XXXXXXXXXXXX)
+    local tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
+    local commandFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
+    local descriptionFile=$(mktemp /tmp/kube_fuzzy.description.XXXXXXXXXXXX)
+    echo "none" > $commandFile
 
     # Key bindings
     declare -A commands
@@ -23,10 +24,13 @@ function kube_fuzzy () {
             ["delete"]="ctrl-t"
             ["describe"]="ctrl-b"
             ["logs"]="ctrl-l"
+            ["none"]="ctrl-n"
     )
 
-    kubectl get $1 |
-    sk --ansi --preview "{
+    local result=$(kubectl get $1 |
+    sk -m --ansi --preview "{
+        echo \"Last command was: \$(cat $commandFile) (updates with preview window)\";
+        echo '';
         kubectl describe $1 {1} > $tempFile;
         lines=\$(echo \$(wc -l < $tempFile));
         eventsLine=\$(cat $tempFile | grep -n 'Events:' | cut -d: -f 1);
@@ -34,42 +38,37 @@ function kube_fuzzy () {
         bat $tempFile --line-range \$eventsLine:\$lines; 
         echo \"-------------------------------------------------------------\"
         less -e $tempFile;
-    }" --bind "${commands[delete]}:execute(kubectl delete $1 {}),${commands[edit]}:execute(echo 'edit' > $commandFile; echo {} > $resultFile)+abort,${commands[describe]}:execute(echo 'describe' > $commandFile; echo {} > $resultFile)+abort,${commands[logs]}:execute(echo 'logs' > $commandFile; echo {} > $resultFile)+abort"
+        }" --bind "${commands[delete]}:execute(kubectl delete $1 {}),${commands[edit]}:execute(echo 'edit' > $commandFile),${commands[describe]}:execute(echo 'describe' > $commandFile),${commands[logs]}:execute(echo 'logs' > $commandFile),${commands[none]}:execute(echo 'none' > $commandFile)")
 
     # Cleanup temporary files
-    exitCode=$(echo $?)
+    local exitCode=$(echo $?)
     rm $tempFile
-    unset tempFile
-    run=$(cat $commandFile)
-    result=$(cat $resultFile) # $(echo $(cat $resultFile | cut -d' ' -f1 | awk '$1=$1' ORS=' ' | cat)) # tr '\r\n' ' ')) # awk '$1=$1' ORS=' ' | cat)
+    rm $descriptionFile
+    local run=$(cat $commandFile)
     rm $commandFile
-    rm $resultFile
-    unset commandFile
-    unset resultFile
-
-    # Handle commands after skim exits
-    if [[ $exitCode -eq 130 ]]; then # Skim was aborted
-        if [[ ! -z "$run" ]]; then
-            if [[ "$run" == "edit" ]]; then
-                kubectl edit $1 "$result"
-            elif [[ "$run" == "describe" ]]; then
-                kubectl describe $1 "$result"
-            fi
+    
+    if [[ "$run" != "none" ]]; then
+        local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ')
+        if [[ "$run" == "edit" ]]; then
+            kubectl edit $1 $result
+        elif [[ "$run" == "describe" ]]; then
+            kubectl describe $1 $result
+        fi
   
-            if [[ $1 == "pods" ]]; then
-                if [[ "$run" == "logs" ]]; then
-                    kubectl logs "$result"
-                fi
-            else
-                if [[ "$run" == "logs" ]]; then
-                    echo "Can't get logs for type $1"
-                fi
+        if [[ $1 == "pods" ]]; then
+            if [[ "$run" == "logs" ]]; then
+                kubectl logs $result
             fi
         else
-            echo "Aborted"
+            if [[ "$run" == "logs" ]]; then
+                echo "Can't get logs for type $1"
+            fi
         fi
+    else
+        echo $result
     fi
 }
+
 
 alias kgp="kube_fuzzy pods"
 alias kgd="kube_fuzzy deployments"
