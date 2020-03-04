@@ -5,6 +5,7 @@
 #       sk  (https://github.com/lotabout/skim)
 #       bat (https://github.com/sharkdp/bat)
 #       bash >= v4, zsh, or any other shell with associative array support
+#       kubectl
 #
 # Usage:
 #       Source the file in your shell, or add to your rc file
