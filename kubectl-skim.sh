@@ -68,8 +68,9 @@ function kube_fuzzy () {
     local run=$(cat $commandFile)
     rm $commandFile
 
-    # Execute last written action, if not "none"
-    if [[ "$run" != "none" ]]; then
+    if [[ -z $result ]]; then           # No selection made
+        echo "Aborted"
+    elif [[ "$run" != "none" ]]; then   # Execute last written command
         local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ')
         if [[ "$run" == "edit" ]]; then
             kubectl edit $1 $result
@@ -86,9 +87,10 @@ function kube_fuzzy () {
                 echo "Can't get logs for type $1"
             fi
         fi
-    else # No action specified, or command was cancelled
+    else    # Selection made
         echo $result
     fi
+
 }
 
 
