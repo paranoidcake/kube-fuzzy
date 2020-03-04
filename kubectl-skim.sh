@@ -93,10 +93,14 @@ ${commands[containers]}:execute(echo 'containers' > $commandFile)" | tr '\n' ','
             if [[ "$run" == "logs" ]]; then
                 kubectl logs $result
             elif [[ "$run" == "containers" ]]; then
-                echo "Fetching containers..."
-                contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
-                initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
-                echo -e "$contNames\n$initContNames" | sk --ansi --preview "kubectl logs $result -c {}"
+                if [[ $result == *" "* ]]; then
+                    echo "WIP: Can't currently handle multiple pods' containers"
+                else
+                    echo "Fetching containers..."
+                    contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
+                    initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
+                    echo -e "$contNames\n$initContNames" | sk --ansi --preview "kubectl logs $result -c {}"
+                fi
             fi
         else
             if [[ "$run" == "logs" ]]; then
