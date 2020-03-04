@@ -47,8 +47,17 @@ function kube_fuzzy () {
             ["delete"]="ctrl-t"
             ["describe"]="ctrl-b"
             ["logs"]="ctrl-l"
+            ["containers"]="ctrl-k"
             ["none"]="ctrl-n"
     )
+
+    actions=$(
+echo -e "${commands[none]}:execute(echo 'none' > $commandFile)
+${commands[delete]}:execute(kubectl delete $1 {})
+${commands[edit]}:execute(echo 'edit' > $commandFile)
+${commands[describe]}:execute(echo 'describe' > $commandFile)
+${commands[logs]}:execute(echo 'logs' > $commandFile)
+${commands[containers]}:execute(echo 'containers' > $commandFile)" | tr '\n' ',')
 
     local result=$(kubectl get $1 |
     sk -m --ansi --preview "{
@@ -61,7 +70,7 @@ function kube_fuzzy () {
         bat $tempFile --line-range \$eventsLine:\$lines; 
         echo \"-------------------------------------------------------------\"
         less -e $tempFile;
-        }" --bind "${commands[delete]}:execute(kubectl delete $1 {}),${commands[edit]}:execute(echo 'edit' > $commandFile),${commands[describe]}:execute(echo 'describe' > $commandFile),${commands[logs]}:execute(echo 'logs' > $commandFile),${commands[none]}:execute(echo 'none' > $commandFile)")
+        }" --bind "$actions")
 
     # Cleanup temporary files, and store their contents for use
     local exitCode=$(echo $?)
