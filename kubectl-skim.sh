@@ -99,7 +99,11 @@ ${commands[containers]}:execute(echo 'containers' > $commandFile)" | tr '\n' ','
                     echo "Fetching containers..."
                     contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
                     initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
-                    echo -e "$contNames\n$initContNames" | sk --ansi --preview "kubectl logs $result -c {}"
+                    logCont=$(echo -e "$contNames\n$initContNames" | sk --ansi --preview "kubectl logs $result -c {}")
+                    if [[ ! -z $logCont ]]; then
+                        kubectl logs $result -c $logCont
+                    fi
+
                 fi
             fi
         else
