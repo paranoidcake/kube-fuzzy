@@ -26,7 +26,7 @@
 #           - The default behaviour of most actions is to write that action's name to be executed*, using execute(echo 'action' > $commandFile)
 #           - Accepting the selection of a kubernetes object (or multiple with Tab) will execute the last written action
 #       Executing actions:
-#           - Escaping, cancelling, or the 'none' action is handled when executing actions
+#           - Escaping / cancelling is handled when executing actions
 #           - Some actions can be type specific (eg. logs) by comparing against the $1 parameter. This should be handled when executing the action
 #       Preview window:
 #           - The preview window will execute `$SHELL -c` on the string passed to the --preview flag each time a line is highlighted
