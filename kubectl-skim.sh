@@ -44,12 +44,13 @@ function kube_fuzzy () {
     # Key bindings
     declare -A commands
     commands+=(
-            ["edit"]="ctrl-e"
+            ["none"]="ctrl-n"
             ["delete"]="ctrl-t"
+            ["edit"]="ctrl-e"
             ["describe"]="ctrl-b"
             ["logs"]="ctrl-l"
             ["containers"]="ctrl-k"
-            ["none"]="ctrl-n"
+            ["decode"]="ctrl-o"
     )
 
     actions=$(
@@ -58,7 +59,8 @@ ${commands[delete]}:execute(kubectl delete $1 {1})
 ${commands[edit]}:execute(echo 'edit' > $commandFile)
 ${commands[describe]}:execute(echo 'describe' > $commandFile)
 ${commands[logs]}:execute(echo 'logs' > $commandFile)
-${commands[containers]}:execute(echo 'containers' > $commandFile)" | tr '\n' ',')
+${commands[containers]}:execute(echo 'containers' > $commandFile)
+${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
 
     local result=$(kubectl get $1 |
     sk -m --ansi --preview "{
@@ -73,51 +75,96 @@ ${commands[containers]}:execute(echo 'containers' > $commandFile)" | tr '\n' ','
         less -e $tempFile;
         }" --bind "$actions")
 
-    # Cleanup temporary files, and store their contents for use
+    # Cleanup temporary files
     local exitCode=$(echo $?)
     rm $tempFile
     local run=$(cat $commandFile)
     rm $commandFile
-
+    
+    # Handle error codes:
+    #   0: passed
+    #   1: no selection made
+    #   2: type error
+    local error=0
+    
     if [[ -z $result ]]; then           # No selection made
-        echo "Aborted"
+        error=1
     elif [[ "$run" != "none" ]]; then   # Execute action
         local result=$(echo $(echo $result | awk '{ print $1 }' | tr '\n' ' '))
-        if [[ "$run" == "edit" ]]; then
-            kubectl edit $1 $result
-        elif [[ "$run" == "describe" ]]; then
-            kubectl describe $1 $result
-        fi
-  
-        if [[ $1 == "pods" ]]; then     # Run pod specific actions
-            if [[ "$run" == "logs" ]]; then
-                kubectl logs $result
-            elif [[ "$run" == "containers" ]]; then
-                if [[ $result == *" "* ]]; then
-                    echo "WIP: Can't currently handle multiple pods' containers"
-                else
-                    echo "Fetching containers..."
-                    contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
-                    initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
-                    logCont=$(echo -e "$contNames\n$initContNames" | sk --ansi --preview "kubectl logs $result -c {}")
-                    if [[ ! -z $logCont ]]; then
-                        kubectl logs $result -c $logCont
-                    fi
 
-                fi
-            fi
-        else
-            if [[ "$run" == "logs" ]]; then
-                echo "Can't get logs for type $1"
-            elif [[ "$run" == "containers" ]]; then
-                echo "Can't get containers for type $1"
-            fi
-        fi
-    else
+        case $run in            # Global actions
+            edit)
+                kubectl edit $1 $result
+                ;;
+            run)
+                kubectl describe $1 $result
+                ;;
+            describe)
+                kubectl describe $1 $result
+                ;;
+            *)                  # Type specific actions
+                case $1 in      
+
+                    pods)
+                        case $run in
+                            logs)
+                                kubectl logs $result
+                                ;;
+                            containers)
+                                if [[ $result == *" "* ]]; then
+                                    echo "WIP: Can't currently handle multiple pods' containers"
+                                else
+                                    echo "Fetching containers..."
+                                    contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
+                                    initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
+                                    logCont=$(echo -e "$contNames\n$initContNames" | sk --ansi --preview "kubectl logs $result -c {}")
+                                    if [[ ! -z $logCont ]]; then
+                                        kubectl logs $result -c $logCont
+                                    fi
+                                fi
+                                ;;
+                            *)
+                                error=2
+                                ;;
+                        esac
+                        ;;
+
+                    secrets)
+                        case $run in
+                            decode)
+                                toSplit=$(kubectl get secrets asm-elasticsearch-cert -o jsonpath='{.data}')
+                                toSplit=$(echo ${toSplit%?} | cut -c 5-)
+                                splitArr=(${toSplit//:/ })
+                                for idx in ${!splitArr[@]}; do
+                                    if [[ ! $(( $idx % 2 )) -eq 0 ]]; then
+                                        splitArr[idx]=$(echo "${splitArr[idx]}" | base64 -d)
+                                    fi
+                                done
+                                echo "${splitArr[*]}"
+                                ;;
+                            *)
+                                error=2
+                                ;;
+                        esac
+                        ;;
+                    *)
+                        error=2
+                        ;;
+                esac
+        esac
+    else    # Selection made
         echo -e "$result"
     fi
-}
 
+    case $error in
+        1)
+            echo "Aborted"
+            ;;
+        2)
+            echo "TypeError: Can't execute '$run' on type $1"
+            ;;
+    esac
+}
 
 alias kgp="kube_fuzzy pods"
 alias kgd="kube_fuzzy deployments"
