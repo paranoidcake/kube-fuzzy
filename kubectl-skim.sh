@@ -41,7 +41,7 @@ function kube_fuzzy () {
     eventsFlag=false
 
     if [[ -z $resource ]]; then
-        echo "A resource is required" >&2
+        echo "Error: A resource is required" >&2
         return 1
     fi
     if [[ ${2} == "--events" ]] || [[ ${2} == "-e" ]]; then
@@ -141,34 +141,40 @@ ${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
                                 fi
                                 ;;
                             *)
-                                echo "Can't execute '${action}' on resource ${1}" >&2
+                                echo "Error: Can't execute '${action}' on resource ${1}" >&2
                                 return 5;;
                         esac;;
                     secrets)
                         case $action in
                             decode)
-                                toSplit=$(kubectl get secrets $(echo $result) -o jsonpath='{.data}')
-                                toSplit=$(echo $toSplit | cut -c 5- | sed 's/.$//')
-                                splitArr=($(echo "$toSplit" | tr ':' ' '))
-                                echo "Fetched values for $result:"
-                                echo "${splitArr[*]}"
-                                echo "Decoded values for $result:"
-                                count=0
-                                for item in ${splitArr[@]}; do
-                                    if [[ ! $(( $count % 2 )) -eq 0 ]]; then
-                                        echo $(echo $item | base64 -d)
-                                    else
-                                        printf "$item: "
-                                    fi
-                                    ((count++))
-                                done
+                                if [[ $result == *" "* ]]; then
+                                    echo "WIP: Can't decode the data of multiple secrets"
+                                    return 6
+                                else
+                                    toSplit=$(kubectl get secrets $(echo $result) -o jsonpath='{.data}')
+                                    toSplit=$(echo $toSplit | cut -c 5- | sed 's/.$//')
+                                    splitArr=($(echo "$toSplit" | tr ':' ' '))
+                                    echo "Fetched values for $result:"
+                                    echo "${splitArr[*]}"
+                                    echo ''
+                                    echo "Decoded values for $result:"
+                                    count=0
+                                    for item in ${splitArr[@]}; do
+                                        if [[ ! $(( $count % 2 )) -eq 0 ]]; then
+                                            echo $(echo $item | base64 -d)
+                                        else
+                                            printf "$item: "
+                                        fi
+                                        ((count++))
+                                    done
+                                fi
                                 ;;
                             *)
-                                echo "Can't execute '${action}' on resource ${1}" >&2
+                                echo "Error: Can't execute '${action}' on resource ${1}" >&2
                                 return 5;;
                         esac;;
                     *)
-                        echo "Can't execute '${action}' on resource ${1}" >&2
+                        echo "Error: Can't execute '${action}' on resource ${1}" >&2
                         return 5;;
                 esac
         esac
