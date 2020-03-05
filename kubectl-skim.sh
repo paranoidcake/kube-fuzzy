@@ -94,22 +94,17 @@ ${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
 
         case $run in            # Global actions
             edit)
-                kubectl edit $1 $result
-                ;;
+                kubectl edit $1 $result;;
             run)
-                kubectl describe $1 $result
-                ;;
+                kubectl describe $1 $result;;
             describe)
-                kubectl describe $1 $result
-                ;;
+                kubectl describe $1 $result;;
             *)                  # Type specific actions
                 case $1 in      
-
                     pods)
                         case $run in
                             logs)
-                                kubectl logs $result
-                                ;;
+                                kubectl logs $result;;
                             containers)
                                 if [[ $result == *" "* ]]; then
                                     echo "WIP: Can't currently handle multiple pods' containers"
@@ -124,11 +119,8 @@ ${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
                                 fi
                                 ;;
                             *)
-                                error=2
-                                ;;
-                        esac
-                        ;;
-
+                                error=2;;
+                        esac;;
                     secrets)
                         case $run in
                             decode)
@@ -145,11 +137,9 @@ ${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
                             *)
                                 error=2
                                 ;;
-                        esac
-                        ;;
+                        esac;;
                     *)
-                        error=2
-                        ;;
+                        error=2;;
                 esac
         esac
     else    # Selection made
@@ -158,11 +148,9 @@ ${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
 
     case $error in
         1)
-            echo "Aborted"
-            ;;
+            echo "Aborted";;
         2)
-            echo "TypeError: Can't execute '$run' on type $1"
-            ;;
+            echo "TypeError: Can't execute '$run' on type $1";;
     esac
 }
 
