@@ -135,8 +135,7 @@ ${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
                                 echo "${splitArr[*]}"
                                 ;;
                             *)
-                                error=2
-                                ;;
+                                error=2;;
                         esac;;
                     *)
                         error=2;;
