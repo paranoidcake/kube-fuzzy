@@ -36,7 +36,6 @@
 #
 
 function kube_fuzzy () {
-    set -x
     # Temporary files for reading / writing data from skim
     local tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
     local commandFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
