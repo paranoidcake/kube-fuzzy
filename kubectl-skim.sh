@@ -36,10 +36,22 @@
 #
 
 function kube_fuzzy () {
+    # Handle arguments / flags
+    resource=${1}
+    eventsFlag=false
+
+    if [[ -z $resource ]]; then
+        echo "A resource is required" >&2
+        return 1
+    fi
+    if [[ ${2} == "--events" ]] || [[ ${2} == "-e" ]]; then
+        eventsFlag=true
+    fi
+
     # Temporary files for reading / writing data from skim
     local tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
-    local commandFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
-    echo "none" > $commandFile
+    local actionFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
+    echo "none" > $actionFile
 
     # Key bindings
     declare -A commands
@@ -53,66 +65,71 @@ function kube_fuzzy () {
             ["decode"]="ctrl-o"
     )
 
+    # Declare actions to be inputted to --bind
     actions=$(
-echo -e "${commands[none]}:execute(echo 'none' > $commandFile)
-${commands[delete]}:execute(kubectl delete $1 {1})
-${commands[edit]}:execute(echo 'edit' > $commandFile)
-${commands[describe]}:execute(echo 'describe' > $commandFile)
-${commands[logs]}:execute(echo 'logs' > $commandFile)
-${commands[containers]}:execute(echo 'containers' > $commandFile)
-${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
+echo -e "${commands[none]}:execute(echo 'none' > $actionFile)
+${commands[delete]}:execute(kubectl delete ${resource} {1})
+${commands[edit]}:execute(echo 'edit' > $actionFile)
+${commands[describe]}:execute(echo 'describe' > $actionFile)
+${commands[logs]}:execute(echo 'logs' > $actionFile)
+${commands[containers]}:execute(echo 'containers' > $actionFile)
+${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
 
-    local result=$(kubectl get $1 |
+    # Launch sk and store the output
+    local result=$(kubectl get $resource |
     sk -m --ansi --preview "{
-        echo \"Last command was: \$(cat $commandFile) (updates with preview window)\";
+        echo \"Last command was: \$(cat $actionFile) (updates with preview window)\";
         echo '';
-        kubectl describe $1 {1} > $tempFile;
-        lines=\$(echo \$(wc -l < $tempFile));
-        eventsLine=\$(cat $tempFile | grep -n 'Events:' | cut -d: -f 1);
-        echo \"-------------------------------------------------------------\"
-        bat $tempFile --line-range \$eventsLine:\$lines; 
-        echo \"-------------------------------------------------------------\"
+        kubectl describe ${resource} {1} > $tempFile;
+        if [[ $eventsFlag == true ]]; then
+            lines=\$(echo \$(wc -l < $tempFile));
+            eventsLine=\$(cat $tempFile | grep -n 'Events:' | cut -d: -f 1);
+            echo \"-------------------------------------------------------------\"
+            bat $tempFile --line-range \$eventsLine:\$lines; 
+            echo \"-------------------------------------------------------------\"
+        fi
         less -e $tempFile;
-        }" --bind "$actions")
+        }" --bind "ctrl-c:abort,$actions") # Binding to capture ctrl-c so that temp files are properly cleaned
 
-    # Cleanup temporary files
-    local exitCode=$(echo $?)
+    if [[ -z $result ]]; then       # No selection made, cleanup and return
+        rm $tempFile
+        rm $actionFile
+        echo "Aborted" >&2
+        return 4
+    fi
+
+    # Cleanup temporary files, retrieve the action to run
     rm $tempFile
-    local run=$(cat $commandFile)
-    rm $commandFile
-    
-    # Handle error codes:
-    #   0: passed
-    #   1: no selection made
-    #   2: type error
-    local error=0
-    
-    if [[ -z $result ]]; then           # No selection made
-        error=1
-    elif [[ "$run" != "none" ]]; then   # Execute action
-        local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ')
+    local action=$(cat $actionFile)
+    rm $actionFile
 
-        case $run in            # Global actions
+    # Execute selected action
+    if [[ "$action" != "none" ]]; then
+        local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ') # Format result to be usable for multiline inputs
+
+        # Global actions
+        case $action in
             edit)
-                kubectl edit $1 $(echo $result);;
-            run)
-                kubectl describe $1 $(echo $result);;
+                kubectl edit $resource $(echo $result);;
             describe)
-                kubectl describe $1 $(echo $result);;
-            *)                  # Type specific actions
-                case $1 in      
+                kubectl describe $resource $(echo $result);;
+            *)
+                # Check for type specific actions
+                case $resource in      
                     pods)
-                        case $run in
+                        case $action in
                             logs)
                                 if [[ $result == *" "* ]]; then
-                                    echo "WIP: Can't currently log multiple pods"
+                                    echo "WIP: Can't currently log multiple pods" >&2
+                                    return 6
                                 else
                                     kubectl logs $(echo $result)
                                 fi
                                 ;;
                             containers)
                                 if [[ $result == *" "* ]]; then
-                                    echo "WIP: Can't currently handle multiple pods' containers"
+                                    echo "WIP: Can't currently handle multiple pods' containers" >&2
+                                    return 6
                                 else
                                     echo "Fetching containers..."
                                     contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
@@ -124,41 +141,43 @@ ${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
                                 fi
                                 ;;
                             *)
-                                error=2;;
+                                echo "Can't execute '${action}' on resource ${1}" >&2
+                                return 5;;
                         esac;;
                     secrets)
-                        case $run in
+                        case $action in
                             decode)
                                 toSplit=$(kubectl get secrets $(echo $result) -o jsonpath='{.data}')
                                 toSplit=$(echo $toSplit | cut -c 5- | sed 's/.$//')
                                 splitArr=($(echo "$toSplit" | tr ':' ' '))
+                                echo "Fetched values for $result:"
+                                echo "${splitArr[*]}"
+                                echo "Decoded values for $result:"
                                 count=0
                                 for item in ${splitArr[@]}; do
-                                    ((count++))
-                                    if [[ $(( $count % 2 )) -eq 0 ]]; then
-                                        splitArr[$count]=$(echo $item | base64 -d)
+                                    if [[ ! $(( $count % 2 )) -eq 0 ]]; then
+                                        echo $(echo $item | base64 -d)
+                                    else
+                                        printf "$item: "
                                     fi
+                                    ((count++))
                                 done
-                                echo ${splitArr[*]}
                                 ;;
                             *)
-                                error=2;;
+                                echo "Can't execute '${action}' on resource ${1}" >&2
+                                return 5;;
                         esac;;
                     *)
-                        error=2;;
+                        echo "Can't execute '${action}' on resource ${1}" >&2
+                        return 5;;
                 esac
         esac
-    else    # Selection made
+    else    # Selection made with no command
         echo -e "$result"
     fi
-
-    case $error in
-        1)
-            echo "Aborted";;
-        2)
-            echo "TypeError: Can't execute '$run' on type $1";;
-    esac
 }
 
-alias kgp="kube_fuzzy pods"
-alias kgd="kube_fuzzy deployments"
+alias kgp="kube_fuzzy pods --events"
+alias kgd="kube_fuzzy deployments --events"
+alias kgs="kube_fuzzy services --events"
+alias kgsec="kube_fuzzy secrets"
