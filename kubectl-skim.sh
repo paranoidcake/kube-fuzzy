@@ -36,6 +36,7 @@
 #
 
 function kube_fuzzy () {
+    set -x
     # Temporary files for reading / writing data from skim
     local tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
     local commandFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
@@ -90,21 +91,26 @@ ${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
     if [[ -z $result ]]; then           # No selection made
         error=1
     elif [[ "$run" != "none" ]]; then   # Execute action
-        local result=$(echo $(echo $result | awk '{ print $1 }' | tr '\n' ' '))
+        local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ')
 
         case $run in            # Global actions
             edit)
-                kubectl edit $1 $result;;
+                kubectl edit $1 $(echo $result);;
             run)
-                kubectl describe $1 $result;;
+                kubectl describe $1 $(echo $result);;
             describe)
-                kubectl describe $1 $result;;
+                kubectl describe $1 $(echo $result);;
             *)                  # Type specific actions
                 case $1 in      
                     pods)
                         case $run in
                             logs)
-                                kubectl logs $result;;
+                                if [[ $result == *" "* ]]; then
+                                    echo "WIP: Can't currently log multiple pods"
+                                else
+                                    kubectl logs $(echo $result)
+                                fi
+                                ;;
                             containers)
                                 if [[ $result == *" "* ]]; then
                                     echo "WIP: Can't currently handle multiple pods' containers"
@@ -124,15 +130,17 @@ ${commands[decode]}:execute(echo 'decode' > $commandFile)" | tr '\n' ',')
                     secrets)
                         case $run in
                             decode)
-                                toSplit=$(kubectl get secrets asm-elasticsearch-cert -o jsonpath='{.data}')
-                                toSplit=$(echo ${toSplit%?} | cut -c 5-)
-                                splitArr=(${toSplit//:/ })
-                                for idx in ${!splitArr[@]}; do
-                                    if [[ ! $(( $idx % 2 )) -eq 0 ]]; then
-                                        splitArr[idx]=$(echo "${splitArr[idx]}" | base64 -d)
+                                toSplit=$(kubectl get secrets $(echo $result) -o jsonpath='{.data}')
+                                toSplit=$(echo $toSplit | cut -c 5- | sed 's/.$//')
+                                splitArr=($(echo "$toSplit" | tr ':' ' '))
+                                count=0
+                                for item in ${splitArr[@]}; do
+                                    ((count++))
+                                    if [[ $(( $count % 2 )) -eq 0 ]]; then
+                                        splitArr[$count]=$(echo $item | base64 -d)
                                     fi
                                 done
-                                echo "${splitArr[*]}"
+                                echo ${splitArr[*]}
                                 ;;
                             *)
                                 error=2;;
