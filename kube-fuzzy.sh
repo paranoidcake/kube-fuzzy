@@ -3,18 +3,21 @@
 #
 # Requirements:
 #       sk  (https://github.com/lotabout/skim)
-#       bat (https://github.com/sharkdp/bat)
 #       bash >= v4, zsh, or any other shell with associative array support
 #       kubectl
+#
+#       Optional:
+#           bat (https://github.com/sharkdp/bat) for the --events formatting flag
 #
 # Usage:
 #       Source the file in your shell, or add to your rc file
 #       See the commands array for keybindings, which by default are:
-#           - ctrl-e: Edit selected objects after exit
-#           - ctrl-t: Delete currently highlighted object*
-#           - ctrl-b: Describe selected objects after exit
+#           - ctrl-e: Edit selected resources after exit
+#           - ctrl-t: Delete currently highlighted resource*
+#           - ctrl-b: Describe selected resources after exit
 #           - ctrl-l: Log selected pods after exit
 #           - ctrl-k: Get containers of selected pod, and display their logs in sk
+#           - ctrl-o: Base64 decode the data fields of selected secret after exit
 #           - ctrl-n: No action, defaults to outputting selected objects
 #       These keybinds and their behaviour can be changed, see #Configuring#Defining keybinds
 #
@@ -23,8 +26,8 @@
 #           - Keybinds are defined in the commands array, in the form ['action']='key(s)'
 #           - Actions are defined in the actions variable, which cannot have leading whitespace and are seperated by newlines
 #       Selection + actions:
-#           - The default behaviour of most actions is to write that action's name to be executed*, using execute(echo 'action' > $commandFile)
-#           - Accepting the selection of a kubernetes object (or multiple with Tab) will execute the last written action
+#           - Actions can run in place (see 'delete'), or after sk exits by writing to the action file
+#           - Accepting the selection of a kubernetes resource (or multiple with Tab) will execute the last action written to the action file
 #       Executing actions:
 #           - Escaping / cancelling is handled when executing actions
 #           - Some actions can be type specific (eg. logs) by comparing against the $1 parameter. This should be handled when executing the action
@@ -78,7 +81,7 @@ ${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
     # Launch sk and store the output
     local result=$(kubectl get $resource |
     sk -m --ansi --preview "{
-        echo \"Last command was: \$(cat $actionFile) (updates with preview window)\";
+        echo \"Last selected action was: \$(cat $actionFile) (updates with preview window)\";
         echo '';
         kubectl describe ${resource} {1} > $tempFile;
         if [[ $eventsFlag == true ]]; then
