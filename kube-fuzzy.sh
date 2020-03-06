@@ -1,42 +1,4 @@
-#
-# Function and aliases to utilise skim and bat to edit kubernetes pods and deployments
-#
-# Requirements:
-#       sk  (https://github.com/lotabout/skim)
-#       bash >= v4, zsh, or any other shell with associative array support
-#       kubectl
-#
-#       Optional:
-#           bat (https://github.com/sharkdp/bat) for the --events formatting flag
-#
-# Usage:
-#       Source the file in your shell, or add to your rc file
-#       See the commands array for keybindings, which by default are:
-#           - ctrl-e: Edit selected resources after exit
-#           - ctrl-t: Delete currently highlighted resource*
-#           - ctrl-b: Describe selected resources after exit
-#           - ctrl-l: Log selected pods after exit
-#           - ctrl-k: Get containers of selected pod, and display their logs in sk
-#           - ctrl-o: Base64 decode the data fields of selected secret after exit
-#           - ctrl-n: No action, defaults to outputting selected objects
-#       These keybinds and their behaviour can be changed, see #Configuring#Defining keybinds
-#
-# Configuring:
-#       Defining keybinds:
-#           - Keybinds are defined in the commands array, in the form ['action']='key(s)'
-#           - Actions are defined in the actions variable, which cannot have leading whitespace and are seperated by newlines
-#       Selection + actions:
-#           - Actions can run in place (see 'delete'), or after sk exits by writing to the action file
-#           - Accepting the selection of a kubernetes resource (or multiple with Tab) will execute the last action written to the action file
-#       Executing actions:
-#           - Escaping / cancelling is handled when executing actions
-#           - Some actions can be type specific (eg. logs) by comparing against the $1 parameter. This should be handled when executing the action
-#       Preview window:
-#           - The preview window will execute `$SHELL -c` on the string passed to the --preview flag each time a line is highlighted
-#
-#       *By default the 'delete' action does not act on the current selection, or wait for the selection to be accepted to execute.
-#           The currently highlighted line is subsituted instead, see `man sk` and the execute() paired with 'delete' in actions for details
-#
+#!/bin/bash
 
 function kube_fuzzy () {
     # Handle arguments / flags
@@ -108,7 +70,7 @@ ${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
 
     # Execute selected action
     if [[ "$action" != "none" ]]; then
-        local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ') # Format result to be usable for multiline inputs
+        local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ' | sed 's/.$//') # Format result to be usable for multiline inputs
 
         # Global actions
         case $action in
@@ -130,6 +92,7 @@ ${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
                                 fi
                                 ;;
                             containers)
+                                local result=$(echo $result)
                                 if [[ $result == *" "* ]]; then
                                     echo "WIP: Can't currently handle multiple pods' containers" >&2
                                     return 6
