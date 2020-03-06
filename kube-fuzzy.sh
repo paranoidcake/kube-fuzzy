@@ -92,15 +92,24 @@ ${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
                                 fi
                                 ;;
                             containers)
-                                local result=$(echo $result)
                                 if [[ $result == *" "* ]]; then
                                     echo "WIP: Can't currently handle multiple pods' containers" >&2
                                     return 6
                                 else
                                     echo "Fetching containers..."
-                                    contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
-                                    initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
-                                    logCont=$(echo -e "$contNames\n$initContNames" | sk --ansi --preview "kubectl logs $result -c {}")
+                                    local contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
+                                    local initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
+                                    local finalContNames=""
+
+                                    if [[ ! -z $contNames && ! -z $initContNames ]]; then
+                                        local finalContNames="$contNames\n$initContNames"
+                                    elif [[ ! -z $contNames ]]; then
+                                        local finalContNames="$contNames"
+                                    else
+                                        local finalContNames="$initContNames"
+                                    fi
+
+                                    local logCont=$(echo -e $finalContNames | sk --ansi --preview "kubectl logs $result -c {}")
                                     if [[ ! -z $logCont ]]; then
                                         kubectl logs $result -c $logCont
                                     fi
