@@ -49,7 +49,7 @@ The default keybinds are:
 - `ctrl-o`: Base64 dec**o**de the data fields of selected secret after exit
 - `ctrl-n`: No action, defaults to outputting selected objects
 
-If you would prefer other keybinds or these interfere with your terminal, see [Configuring#Keybinds](#Configuring#Keybinds).
+If you would prefer other keybinds or these interfere with your terminal, see [Configuring#Keybinds](#Configuring/Keybinds).
 
 Many keybinds will queue an action to be performed after accepting a selection.
 You can see the last queued action at the top of the preview pane on the right side of the screen.
