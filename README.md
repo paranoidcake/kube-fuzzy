@@ -11,7 +11,7 @@ with an interactive prompt like this:
 
 <img width="600" alt="Screenshot 2020-03-06 at 11 49 47" src="https://user-images.githubusercontent.com/33574023/76081247-9e17fe00-5fa0-11ea-81d3-0b0dab104677.png">
 
-by using skim. You can watch the [fuzzy search](https://drive.google.com/file/d/1I78paX1V3ZKyVqJo--OIf5eUMhylabVx/view) and [other features](https://drive.google.com/open?id=1zBXT-qXflnML-4SSndWklCn-h1sIODbM) in action too.
+by using skim. You can watch the [fuzzy search](https://drive.google.com/open?id=175LeRlFWo3vM2UsFlEeoJ5ZxIpYe_BlL) and [other features](https://drive.google.com/open?id=1zBXT-qXflnML-4SSndWklCn-h1sIODbM) in action too.
 
 ### Aliases
 
