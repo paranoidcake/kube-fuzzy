@@ -10,6 +10,9 @@ function kube_fuzzy () {
         return 1
     fi
     if [[ ${2} == "--events" ]] || [[ ${2} == "-e" ]]; then
+        if [[ ! $(command -v bat) ]]; then
+            echo "Warning: --events flag was used but bat is not installed!" >&2
+        fi
         eventsFlag=true
     fi
 
@@ -50,7 +53,7 @@ ${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
             lines=\$(echo \$(wc -l < $tempFile));
             eventsLine=\$(cat $tempFile | grep -n 'Events:' | cut -d: -f 1);
             echo \"-------------------------------------------------------------\"
-            bat $tempFile --line-range \$eventsLine:\$lines; 
+            bat $tempFile --line-range \$eventsLine:\$lines 
             echo \"-------------------------------------------------------------\"
         fi
         less -e $tempFile;
