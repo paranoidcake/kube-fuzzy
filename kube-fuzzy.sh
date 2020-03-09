@@ -31,8 +31,8 @@ function kube_fuzzy () {
     echo "none" > $actionFile
 
     # Key bindings
-    declare -A commands
-    commands+=(
+    declare -A keybinds
+    keybinds+=(
             ["none"]="ctrl-n"
             ["delete"]="ctrl-t"
             ["edit"]="ctrl-e"
@@ -44,18 +44,18 @@ function kube_fuzzy () {
 
     # Declare actions to be inputted to --bind
     actions=$(
-echo -e "${commands[none]}:execute(echo 'none' > $actionFile)
-${commands[delete]}:execute(echo 'kube_delete' > $actionFile)
-${commands[edit]}:execute(echo 'kube_edit' > $actionFile)
-${commands[describe]}:execute(echo 'kube_describe' > $actionFile)
-${commands[logs]}:execute(echo 'kube_logs' > $actionFile)
-${commands[containers]}:execute(echo 'kube_containers' > $actionFile)
-${commands[decode]}:execute(echo 'kube_decode' > $actionFile)" | tr '\n' ',')
+echo -e "${keybind[none]}:execute(echo 'none' > $actionFile)
+${keybind[delete]}:execute(echo 'kube_delete' > $actionFile)
+${keybind[edit]}:execute(echo 'kube_edit' > $actionFile)
+${keybind[describe]}:execute(echo 'kube_describe' > $actionFile)
+${keybind[logs]}:execute(echo 'kube_logs' > $actionFile)
+${keybind[containers]}:execute(echo 'kube_containers' > $actionFile)
+${keybind[decode]}:execute(echo 'kube_decode' > $actionFile)" | tr '\n' ',')
 
     # Launch sk and store the output
     local result=$(kubectl get $resource |
     sk -m --ansi --preview "{
-        echo \"Last selected action was: \$(cat $actionFile) (updates with preview window)\";
+        echo \"Last selected action was: \$(cat $actionFile | sed s/kube_//) (updates with preview window)\";
         echo '';
         kubectl describe ${resource} {1} > $tempFile;
         if [[ $eventsFlag == true ]]; then
@@ -80,10 +80,11 @@ ${commands[decode]}:execute(echo 'kube_decode' > $actionFile)" | tr '\n' ',')
     local action=$(cat $actionFile)
     rm $actionFile
 
-    # Execute selected action
+    # An action was selected
     if [[ "$action" != "none" ]]; then
         local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ' | sed 's/.$//') # Format result to be usable for multiline inputs
 
+        # 
         $DIR/actions.sh "$action" "$resource" "$result"
 
         # Handle function exit codes
