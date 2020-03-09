@@ -7,7 +7,7 @@ function kube_fuzzy () {
 
     if [[ -z $resource ]]; then
         echo "Error: A resource is required" >&2
-        return 1
+        return 2
     fi
     if [[ ${2} == "--events" ]] || [[ ${2} == "-e" ]]; then
         if [[ ! $(command -v bat) ]]; then
@@ -15,6 +15,15 @@ function kube_fuzzy () {
         fi
         eventsFlag=true
     fi
+
+    # Get directory kube_fuzzy was cloned in (POSIX compliant I swear)
+    if test -n "$BASH" ; then DIR=$BASH_SOURCE
+    elif test -n "$TMOUT"; then DIR=${.sh.file}
+    elif test -n "$ZSH_NAME" ; then DIR=${(%):-%x}
+    elif test ${0##*/} = dash; then x=$(lsof -p $$ -Fn0 | tail -1); DIR=${x#n}
+    else DIR=$0
+    fi
+    DIR=$(echo $DIR | sed "s/kube-fuzzy.sh$//")
 
     # Temporary files for reading / writing data from skim
     local tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
@@ -36,12 +45,12 @@ function kube_fuzzy () {
     # Declare actions to be inputted to --bind
     actions=$(
 echo -e "${commands[none]}:execute(echo 'none' > $actionFile)
-${commands[delete]}:execute(kubectl delete ${resource} {1})
-${commands[edit]}:execute(echo 'edit' > $actionFile)
-${commands[describe]}:execute(echo 'describe' > $actionFile)
-${commands[logs]}:execute(echo 'logs' > $actionFile)
-${commands[containers]}:execute(echo 'containers' > $actionFile)
-${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
+${commands[delete]}:execute(echo 'kube_delete' > $actionFile)
+${commands[edit]}:execute(echo 'kube_edit' > $actionFile)
+${commands[describe]}:execute(echo 'kube_describe' > $actionFile)
+${commands[logs]}:execute(echo 'kube_logs' > $actionFile)
+${commands[containers]}:execute(echo 'kube_containers' > $actionFile)
+${commands[decode]}:execute(echo 'kube_decode' > $actionFile)" | tr '\n' ',')
 
     # Launch sk and store the output
     local result=$(kubectl get $resource |
@@ -63,7 +72,7 @@ ${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
         rm $tempFile
         rm $actionFile
         echo "Aborted" >&2
-        return 4
+        return 1
     fi
 
     # Cleanup temporary files, retrieve the action to run
@@ -75,87 +84,23 @@ ${commands[decode]}:execute(echo 'decode' > $actionFile)" | tr '\n' ',')
     if [[ "$action" != "none" ]]; then
         local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ' | sed 's/.$//') # Format result to be usable for multiline inputs
 
-        # Global actions
-        case $action in
-            edit)
-                kubectl edit $resource $(echo $result);;
-            describe)
-                kubectl describe $resource $(echo $result);;
-            *)
-                # Check for type specific actions
-                case $resource in      
-                    pods)
-                        case $action in
-                            logs)
-                                if [[ $result == *" "* ]]; then
-                                    echo "WIP: Can't currently log multiple pods" >&2
-                                    return 6
-                                else
-                                    kubectl logs $(echo $result)
-                                fi
-                                ;;
-                            containers)
-                                if [[ $result == *" "* ]]; then
-                                    echo "WIP: Can't currently handle multiple pods' containers" >&2
-                                    return 6
-                                else
-                                    echo "Fetching containers..."
-                                    local contNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.containers[*].name}'))
-                                    local initContNames=$(printf '%s\n' $(kubectl get pods $result -o jsonpath='{.spec.initContainers[*].name}'))
-                                    local finalContNames=""
+        $DIR/actions.sh "$action" "$resource" "$result"
 
-                                    if [[ ! -z $contNames && ! -z $initContNames ]]; then
-                                        local finalContNames="$contNames\n$initContNames"
-                                    elif [[ ! -z $contNames ]]; then
-                                        local finalContNames="$contNames"
-                                    else
-                                        local finalContNames="$initContNames"
-                                    fi
+        # Handle function exit codes
+        local exit_code=$(echo $?)
 
-                                    local logCont=$(echo -e $finalContNames | sk --ansi --preview "kubectl logs $result -c {}")
-                                    if [[ ! -z $logCont ]]; then
-                                        kubectl logs $result -c $logCont
-                                    fi
-                                fi
-                                ;;
-                            *)
-                                echo "Error: Can't execute '${action}' on resource ${1}" >&2
-                                return 5;;
-                        esac;;
-                    secrets)
-                        case $action in
-                            decode)
-                                if [[ $result == *" "* ]]; then
-                                    echo "WIP: Can't decode the data of multiple secrets"
-                                    return 6
-                                else
-                                    toSplit=$(kubectl get secrets $(echo $result) -o jsonpath='{.data}')
-                                    toSplit=$(echo $toSplit | cut -c 5- | sed 's/.$//')
-                                    splitArr=($(echo "$toSplit" | tr ':' ' '))
-                                    echo "Fetched values for $result:"
-                                    echo "${splitArr[*]}"
-                                    echo ''
-                                    echo "Decoded values for $result:"
-                                    count=0
-                                    for item in ${splitArr[@]}; do
-                                        if [[ ! $(( $count % 2 )) -eq 0 ]]; then
-                                            echo $(echo $item | base64 -d)
-                                        else
-                                            printf "$item: "
-                                        fi
-                                        ((count++))
-                                    done
-                                fi
-                                ;;
-                            *)
-                                echo "Error: Can't execute '${action}' on resource ${1}" >&2
-                                return 5;;
-                        esac;;
-                    *)
-                        echo "Error: Can't execute '${action}' on resource ${1}" >&2
-                        return 5;;
-                esac
-        esac
+        if [[ ! $exit_code -eq 0 ]]; then
+            local fun_name=$(echo $action | sed "s/kube_//")
+            if [[ $exit_code -eq 3 ]]; then
+                echo "Action $fun_name incompatible with resource of type $resource" >&2
+                return 3
+            elif [[ exit_code -eq 4 ]]; then
+                echo "Action $fun_name incompatible with multiple inputs" >&2
+                return 4
+            else
+                return $exit_code
+            fi
+        fi
     else    # Selection made with no command
         echo -e "$result"
     fi
