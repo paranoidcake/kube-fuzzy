@@ -1,6 +1,23 @@
 # kube-fuzzy
 Simplify working with kubectl on the command line with skim.
 
+## Contents
+
+ - [Usage](#usage)
+   - [Aliases](#aliases)
+   - [Keybinds](#keybinds)
+ - [Requirements](#requirements)
+ - [Installation](#installation)
+   - [Dependencies](#dependencies)
+     - [MacOS](#macos)
+     - [Fedora](#fedora)
+     - [Arch Linux](#arch-linux)
+   - [Source the script](#source-the-script)
+ - [Configuring](#configuring)
+   - [Aliases](#aliases-1)
+   - [Keybinds](#keybinds-1)
+   - [Actions](#actions)
+
 ## Usage
 
 kube-fuzzy aims to replace this:
@@ -32,7 +49,7 @@ or with `bat` installed:
 
     kube_fuzzy pods --events
 
-which will place the `Events:` part of the preview on the top to read updates quickly.
+which will place the `Events:` part of the preview on the top to read updates more easily.
 `kgp`, `kgd` and `kgs` by default use this flag (see [Configuring](#Configuring)).
 
  - Note this may cause a "double output" effect if the resource reports no events when described (eg. `secrets`), so only use with relevant resources.
@@ -42,7 +59,7 @@ which will place the `Events:` part of the preview on the top to read updates qu
 The default keybinds are:
 
 - `ctrl-e`: **E**dit selected resources after exit
-- `ctrl-t`: Dele**t**e currently highlighted resource*
+- `ctrl-t`: Dele**t**e currently highlighted resource
 - `ctrl-b`: Descri**b**e selected resources after exit
 - `ctrl-l`: **L**og selected pod after exit
 - `ctrl-k`: Get containers of selected pod, and display its logs in sk
@@ -51,15 +68,16 @@ The default keybinds are:
 
 If you would prefer other keybinds or these interfere with your terminal, see [Configuring#Keybinds](#keybinds-1).
 
-Many keybinds will queue an action to be performed after accepting a selection.
+Keybinds will queue an action to be performed after accepting a selection.
 You can see the last queued action at the top of the preview pane on the right side of the screen.
+To add more actions, see [Configuring#Actions](#actions)
 
 - Note: This will only update with the preview window itself, which is limited by how fast `kubectl` can run.
 
 ## Requirements
   - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
   - [sk](https://github.com/lotabout/skim)
-  - bash >= v4, zsh or similar
+  - bash >= v4, zsh or similar. Fish cannot run the script
   - Optional:
     - [bat](https://github.com/sharkdp/bat), used for the --events formatting flag
 
@@ -152,12 +170,12 @@ You can also call the `kube_fuzzy` command from your `.bashrc` file after sourci
 
 ### Keybinds
 
-By default keybinds are defined in the commands array (on line 21), with the format `["action"]="binding"` as:
+By default keybinds are defined in the keybinds array (on line 21), with the format `["action"]="binding"` as:
 
 ```bash
 # Key bindings
-declare -A commands
-commands+=(
+declare -A keybinds
+keybinds+=(
     ["none"]="ctrl-n"
     ["delete"]="ctrl-t"
     ["edit"]="ctrl-e"
@@ -215,3 +233,53 @@ AVAILABLE KEYS: (SYNONYMS)
 ```
 
 </details>
+
+### Actions
+
+Actions are defined in the `actions.sh` file in the same directory as `kube-fuzzy.sh`.
+
+To implement a new action, define it as a function in `actions.sh` with the prefix `kube_`. It must accept a kubernetes resource for argument 1, and a space seperated list of names of those resources for argument 2.
+
+To get your action called from within `kube-fuzzy.sh`, first give it a keybind in the `keybinds` array, as in [Configuring#Keybinds](#keybinds-1). Then add an entry to `actions`, which will write the name of your command to `actionFile`.
+
+Some exit codes are available, which `kube-fuzzy.sh` will print an error message for. To utilise them simply return their value.
+
+Currently they are:
+| Exit Code | Error |
+|---|---|
+| 3 | Incompatible resource |
+| 4 | Incompatible with multiple resources selected |
+
+`kube-fuzzy.sh` will propagate any code recieved from a function called in `actions.sh` to the shell it was executed in
+
+#### Example implementation: Describe
+
+1. Define the function in `actions.sh`
+
+```bash
+function kube_describe() {
+    resource="$1"
+    result="$2"
+    kubectl describe "$resource" "$result"
+}
+```
+
+2. Give it a keybind in `kube-fuzzy.sh`
+
+```bash
+declare -A keybinds
+keybinds+=(
+    ["none"]="ctrl-n"
+    ["describe"]="ctrl-b"
+)
+```
+
+3. Add it to `actions` in `kube-fuzzy.sh`
+
+```bash
+actions=$(
+echo -e "${keybind[none]}:execute(echo 'none' > $actionFile)
+${keybind[describe]}:execute(echo 'kube_describe' > $actionFile) | tr '\n' ',')
+```
+
+4. It will now be runnable with `ctrl-b` when running `kube_fuzzy`
