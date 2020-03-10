@@ -46,20 +46,22 @@ function kube_fuzzy () {
         fi
     done < $DIR/keybinds/any
 
-    # And again for the current resource
-    while IFS= read -r line; do
-        if [[ -z $line || "$(printf '%s' "$line" | cut -c1)" == '#' ]]; then
-            continue
-        else
-            local action="$(printf '%s' $line | cut -d '=' -f 1)"
-            if [[ -z ${keybinds[$action]} ]]; then
-                keybinds[$action]="$(printf '%s' $line | cut -d '=' -f 2)"
+    # Then again for the current resource if any keybinds are defined
+    if [[ -f $DIR/keybinds/$resource ]]; then
+        while IFS= read -r line; do
+            if [[ -z $line || "$(printf '%s' "$line" | cut -c1)" == '#' ]]; then
+                continue
             else
-                echo "Conflicting keybind for $action found in file '$DIR/keybinds/$resource!'" >&2
-                return 5
+                local action="$(printf '%s' $line | cut -d '=' -f 1)"
+                if [[ -z ${keybinds[$action]} ]]; then
+                    keybinds[$action]="$(printf '%s' $line | cut -d '=' -f 2)"
+                else
+                    echo "Conflicting keybind for $action found in file '$DIR/keybinds/$resource!'" >&2
+                    return 5
+                fi
             fi
-        fi
-    done < $DIR/keybinds/$resource
+        done < $DIR/keybinds/$resource
+    fi
 
     # Generate string of binds based on keybinds and functions found in actions.sh
     local actions
