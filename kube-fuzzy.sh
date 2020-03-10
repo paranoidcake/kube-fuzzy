@@ -42,15 +42,13 @@ function kube_fuzzy () {
             ["decode"]="ctrl-o"
     )
 
-    # Declare actions to be inputted to --bind
-    actions=$(
-echo -e "${keybinds[none]}:execute(echo 'none' > $actionFile)
-${keybinds[delete]}:execute(echo 'kube_delete' > $actionFile)
-${keybinds[edit]}:execute(echo 'kube_edit' > $actionFile)
-${keybinds[describe]}:execute(echo 'kube_describe' > $actionFile)
-${keybinds[logs]}:execute(echo 'kube_logs' > $actionFile)
-${keybinds[containers]}:execute(echo 'kube_containers' > $actionFile)
-${keybinds[decode]}:execute(echo 'kube_decode' > $actionFile)" | tr '\n' ',')
+    # Generate string of binds based on keybinds and functions found in actions.sh
+    local actions
+    while IFS= read; do
+        if [[ ! -z ${keybinds[$REPLY]} ]]; then
+            actions+=$(echo "${keybinds[$REPLY]}:execute(echo 'kube_$REPLY' > $actionFile),")
+        fi
+    done <<< "$(grep ^function $DIR/actions.sh | awk '{ print $2 }' | sed "s/()$//" | sed "s/kube_//")"
 
     # Launch sk and store the output
     local result=$(kubectl get $resource |
