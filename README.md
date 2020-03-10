@@ -1,7 +1,7 @@
 # kube-fuzzy
 Simplify working with kubectl on the command line with skim.
 
-## Table of Contents
+## Contents
 
  - [Usage](#usage)
    - [Aliases](#aliases)
