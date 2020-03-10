@@ -170,25 +170,31 @@ You can also call the `kube_fuzzy` command from your `.bashrc` file after sourci
 
 ### Keybinds
 
-By default keybinds are defined in the keybinds array (on line 21), with the format `["action"]="binding"` as:
+By default keybinds are defined in files in the `keybinds/` folder, with the format `action=binding`, seperated by new lines. 
 
-```bash
-# Key bindings
-declare -A keybinds
-keybinds+=(
-    ["none"]="ctrl-n"
-    ["delete"]="ctrl-t"
-    ["edit"]="ctrl-e"
-    ["describe"]="ctrl-b"
-    ["logs"]="ctrl-l"
-    ["containers"]="ctrl-k"
-    ["decode"]="ctrl-o"
-)
-```
+`action` **must** match what comes after `kube_` in it's function name in `actions.sh`.
+  - For example, the action name for `kube_describe()` is `describe`.
 
-From the `sk` man page:
+They can be defined:
 
-<details><summary>Available keys</summary>
+Through `kube_define`, which accepts a resource (eg. `pods` or `any`), and then a string of space seperated keybinds.
+  - Eg. `kube_define pods 'logs=ctrl-l containers=ctrl-k'`, which will:
+    - Define the keybind `ctrl-l` to call `kube_logs()` from `actions.sh`
+    - Define the keybind `ctrl-k` to call `kube_containers()` from `actions.sh`
+  
+Or manually by creating / editing a file in `keybinds/`, following the above format. You can view some examples in the `any`, `pods` and `secrets` files that come with the repo.
+
+#### Load order
+
+The `any` file's keybinds are always applied. `kube_fuzzy` will also check if there is a file matching the resource name (eg. `pods`) to read keybinds from.
+
+This allows for global and resource-specific keybinds to be defined.
+
+#### Accepted keys
+
+For a list of accepted keys see:
+
+<details><summary>Available keys from the sk man page</summary>
  
 ```
 AVAILABLE KEYS: (SYNONYMS)
@@ -264,22 +270,11 @@ function kube_describe() {
 }
 ```
 
-2. Give it a keybind in `kube-fuzzy.sh`
+2. Give it a keybind:
 
-```bash
-declare -A keybinds
-keybinds+=(
-    ["none"]="ctrl-n"
-    ["describe"]="ctrl-b"
-)
-```
+  - For our example:
+    - `kube_define any 'describe=ctrl-b'`
+    
+    But this can be done in other ways, see [Configuring#Keybinds](#keybinds-1) for details.
 
-3. Add it to `actions` in `kube-fuzzy.sh`
-
-```bash
-actions=$(
-echo -e "${keybind[none]}:execute(echo 'none' > $actionFile)
-${keybind[describe]}:execute(echo 'kube_describe' > $actionFile) | tr '\n' ',')
-```
-
-4. It will now be runnable with `ctrl-b` when running `kube_fuzzy`
+3. It will now be runnable with `ctrl-b` when running `kube_fuzzy`
