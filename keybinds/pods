@@ -1,0 +1,4 @@
+# Pod specific keybinds
+
+logs=ctrl-l
+containers=ctrl-k

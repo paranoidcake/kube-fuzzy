@@ -1,0 +1,6 @@
+# Global keybinds
+
+none=ctrl-n
+delete=ctrl-t
+edit=ctrl-e
+describe=ctrl-b

@@ -23,24 +23,43 @@ function kube_fuzzy () {
     elif test ${0##*/} = dash; then x=$(lsof -p $$ -Fn0 | tail -1); DIR=${x#n}
     else DIR=$0
     fi
-    DIR=$(echo $DIR | sed "s/kube-fuzzy.sh$//")
+    DIR=$(echo $DIR | sed "s/\/kube-fuzzy.sh$//")
 
     # Temporary files for reading / writing data from skim
     local tempFile=$(mktemp /tmp/kube_fuzzy.XXXXXXXXXXXX)
     local actionFile=$(mktemp /tmp/kube_fuzzy.command.XXXXXXXXXXXX)
     echo "none" > $actionFile
 
-    # Key bindings
+    # Read key bindings from the 'any' file
     declare -A keybinds
-    keybinds+=(
-            ["none"]="ctrl-n"
-            ["delete"]="ctrl-t"
-            ["edit"]="ctrl-e"
-            ["describe"]="ctrl-b"
-            ["logs"]="ctrl-l"
-            ["containers"]="ctrl-k"
-            ["decode"]="ctrl-o"
-    )
+    while IFS= read -r line; do
+        if [[ -z $line || "$(printf '%s' "$line" | cut -c1)" == '#' ]]; then
+            continue
+        else
+            local action="$(printf '%s' $line | cut -d '=' -f 1)"
+            if [[ -z ${keybinds[$action]} ]]; then
+                keybinds[$action]="$(printf '%s' $line | cut -d '=' -f 2)"
+            else
+                echo "Conflicting keybind for $action found in file '$DIR/keybinds/any'!" >&2
+                return 5
+            fi
+        fi
+    done < $DIR/keybinds/any
+
+    # And again for the current resource
+    while IFS= read -r line; do
+        if [[ -z $line || "$(printf '%s' "$line" | cut -c1)" == '#' ]]; then
+            continue
+        else
+            local action="$(printf '%s' $line | cut -d '=' -f 1)"
+            if [[ -z ${keybinds[$action]} ]]; then
+                keybinds[$action]="$(printf '%s' $line | cut -d '=' -f 2)"
+            else
+                echo "Conflicting keybind for $action found in file '$DIR/keybinds/$resource!'" >&2
+                return 5
+            fi
+        fi
+    done < $DIR/keybinds/$resource
 
     # Generate string of binds based on keybinds and functions found in actions.sh
     local actions
