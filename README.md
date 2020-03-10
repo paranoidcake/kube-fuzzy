@@ -42,7 +42,7 @@ which will place the `Events:` part of the preview on the top to read updates mo
 The default keybinds are:
 
 - `ctrl-e`: **E**dit selected resources after exit
-- `ctrl-t`: Dele**t**e currently highlighted resource*
+- `ctrl-t`: Dele**t**e currently highlighted resource
 - `ctrl-b`: Descri**b**e selected resources after exit
 - `ctrl-l`: **L**og selected pod after exit
 - `ctrl-k`: Get containers of selected pod, and display its logs in sk
@@ -51,8 +51,9 @@ The default keybinds are:
 
 If you would prefer other keybinds or these interfere with your terminal, see [Configuring#Keybinds](#keybinds-1).
 
-Many keybinds will queue an action to be performed after accepting a selection.
+Keybinds will queue an action to be performed after accepting a selection.
 You can see the last queued action at the top of the preview pane on the right side of the screen.
+To add more actions, see [Configuring#Actions](#actions)
 
 - Note: This will only update with the preview window itself, which is limited by how fast `kubectl` can run.
 
@@ -259,7 +260,7 @@ keybinds+=(
 3. Add it to `actions` in `kube-fuzzy.sh`
 
 ```bash
-    actions=$(
+actions=$(
 echo -e "${keybind[none]}:execute(echo 'none' > $actionFile)
 ${keybind[describe]}:execute(echo 'kube_describe' > $actionFile) | tr '\n' ',')
 ```
