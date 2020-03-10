@@ -1,6 +1,23 @@
 # kube-fuzzy
 Simplify working with kubectl on the command line with skim.
 
+## Table of Contents
+
+ - [Usage](#usage)
+   - [Aliases](#aliases)
+   - [Keybinds](#keybinds)
+ - [Requirements](#requirements)
+ - [Installation](#installation)
+   - [Dependencies](#dependencies)
+     - [MacOS](#macos)
+     - [Fedora](#fedora)
+     - [Arch Linux](#arch-linux)
+   - [Source the script](#source-the-script)
+ - [Configuring](#configuring)
+   - [Aliases](#aliases-1)
+   - [Keybinds](#keybinds-1)
+   - [Actions](#actions)
+
 ## Usage
 
 kube-fuzzy aims to replace this:
