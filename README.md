@@ -77,7 +77,7 @@ To add more actions, see [Configuring#Actions](#actions)
 ## Requirements
   - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
   - [sk](https://github.com/lotabout/skim)
-  - bash >= v4, zsh or similar
+  - bash >= v4, zsh or similar. Fish cannot run the script
   - Optional:
     - [bat](https://github.com/sharkdp/bat), used for the --events formatting flag
 
