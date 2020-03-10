@@ -124,6 +124,48 @@ function kube_fuzzy () {
     fi
 }
 
+function kube_define() {
+    resource="${1}"
+    binds="${2}"
+
+    if test -n "$BASH" ; then DIR=$BASH_SOURCE
+    elif test -n "$TMOUT"; then DIR=${.sh.file}
+    elif test -n "$ZSH_NAME" ; then DIR=${(%):-%x}
+    elif test ${0##*/} = dash; then x=$(lsof -p $$ -Fn0 | tail -1); DIR=${x#n}
+    else DIR=$0
+    fi
+    DIR=$(echo $DIR | sed "s/\/kube-fuzzy.sh$//")
+
+    if [[ ! -f $DIR/keybinds/$resource ]]; then
+        echo "No definitions found for type $resource"
+        echo "Generating..."
+        touch "$DIR/keybinds/$resource"
+    else
+        echo "The following definitions were found for type $resource:"
+        echo -e "$(cat "$DIR/keybinds/$resource")"
+        echo "Append or overwrite? [a/o] (Any other key will abort)"
+        read op
+        case $op in
+            o | O)
+                echo "Overwriting..."
+                echo -e "$(echo $binds | tr " " "\n")" > $DIR/keybinds/$resource
+                ;;
+            a | A)
+                echo "Appending..."
+                echo -e "$(echo $binds | tr " " "\n")" >> $DIR/keybinds/$resource
+                ;;
+            *)
+                echo "Aborting..."
+                return 0
+                ;;
+        esac
+        echo "New keybinds are now:"
+        echo -e "$(cat "$DIR/keybinds/$resource")"
+    fi
+
+    unset op
+}
+
 alias kgp="kube_fuzzy pods --events"
 alias kgd="kube_fuzzy deployments --events"
 alias kgs="kube_fuzzy services --events"
