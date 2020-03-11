@@ -277,11 +277,10 @@ function kube_describe() {
 }
 ```
 
-2. Give it a keybind:
+2. Give it a keybind by calling `kube_define` from your shell:
 
-    - For our example:
-      - `kube_define any 'describe=ctrl-b'`
+       kube_define any 'describe=ctrl-b'
     
-      But this can be done in other ways, see [Configuring#Keybinds](#keybinds-1) for details.
+    (This can be done in other ways, see [Configuring#Keybinds](#keybinds-1) for details)
 
 3. It will now be runnable with `ctrl-b` when running `kube_fuzzy`
