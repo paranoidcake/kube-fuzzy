@@ -183,14 +183,17 @@ They can be defined:
 
  - Through `kube_define`, which accepts a resource (eg. `pods` or `any`), and then a string of space seperated keybinds.
     - Eg. `kube_define pods 'logs=ctrl-l containers=ctrl-k'`, which will:
+      - Create a file 'pods' in `keybinds/`, which will be loaded whenever `kube_fuzzy` is called on `pods`
       - Define the keybind `ctrl-l` to call `kube_logs()` from `actions.sh`
       - Define the keybind `ctrl-k` to call `kube_containers()` from `actions.sh`
   
  - Or manually by creating / editing a file in `keybinds/`, following the above format. You can view some examples in the `any`, `pods` and `secrets` files that come with the repo.
 
-#### Load order
+#### Loading keybinds
 
-The `any` file's keybinds are always applied. `kube_fuzzy` will also check if there is a file matching the resource name (eg. `pods`) to read keybinds from.
+Keybinds are loaded automatically based on the resource name. `kube_fuzzy` will check if there is a file matching the resource name (eg. `pods`) and read from it.
+
+The `any` file's keybinds are also applied on any resource type.
 
 This allows for global and resource-specific keybinds to be defined.
 
