@@ -103,7 +103,6 @@ function kube_fuzzy () {
     if [[ "$action" != "none" ]]; then
         local result=$(echo $result | awk '{ print $1 }' | tr '\n' ' ' | sed 's/.$//') # Format result to be usable for multiline inputs
 
-        # 
         $DIR/actions.sh "$action" "$resource" "$result"
 
         # Handle function exit codes

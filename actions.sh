@@ -5,20 +5,20 @@
 
 function kube_delete () {
     resource="$1"
-    pods="$2"
-    kubectl delete "$resource" "$result"
+    result="$2"
+    kubectl delete "${resource}" $result
 }
 
 function kube_edit() {
     resource="$1"
     result="$2"
-    kubectl edit "$resource" "$result"
+    kubectl edit "$resource" $result
 }
 
 function kube_describe() {
     resource="$1"
     result="$2"
-    kubectl describe "$resource" "$result"
+    kubectl describe "$resource" $result
 }
 
 function kube_logs() {
