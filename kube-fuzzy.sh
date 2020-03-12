@@ -85,7 +85,7 @@ function kube_fuzzy () {
             echo \"-------------------------------------------------------------\"
         fi
         less -e $tempFile;
-        }" --bind "ctrl-c:abort,$actions") # Binding to capture ctrl-c so that temp files are properly cleaned
+    }" --bind "ctrl-c:abort,ctrl-r:execute(echo {} > /dev/null),$actions") # Binding to capture ctrl-c so that temp files are properly cleaned
 
     if [[ -z $result ]]; then       # No selection made, cleanup and return
         rm $tempFile
