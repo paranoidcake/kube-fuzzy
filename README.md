@@ -20,15 +20,7 @@ Simplify working with kubectl on the command line with skim.
 
 ## Usage
 
-kube-fuzzy aims to replace this:
-
-<img width="600" alt="Screenshot 2020-03-06 at 11 48 59" src="https://user-images.githubusercontent.com/33574023/76081193-7d4fa880-5fa0-11ea-8333-cbb1fb7b4bcf.png">
-
-with an interactive prompt like this:
-
-<img width="600" alt="Screenshot 2020-03-06 at 11 49 47" src="https://user-images.githubusercontent.com/33574023/76081247-9e17fe00-5fa0-11ea-81d3-0b0dab104677.png">
-
-by using skim. You can watch the [fuzzy search](https://drive.google.com/open?id=175LeRlFWo3vM2UsFlEeoJ5ZxIpYe_BlL) and some of the [other features](https://drive.google.com/open?id=1zBXT-qXflnML-4SSndWklCn-h1sIODbM) in action too.
+kube-fuzzy aims to replace kubectl with an interactive prompt by using skim.
 
 `kube-fuzzy.sh` includes 2 functions to source in your shell:
   - `kube_fuzzy`, to provide the main functionality
